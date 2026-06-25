@@ -103,11 +103,11 @@ function drawWarp(dt,now,cx,cy){
 /* ---------- частицы ---------- */
 var hearts=[], puffs=[];
 function addHeart(x,y,vy,sz){ hearts.push({x:x,y:y,vx:rnd(-0.25,0.25),vy:vy,s:sz,a:1,rot:rnd(-0.3,0.3),vr:rnd(-0.02,0.02)}); }
-function addPuff(x,y,vx,vy){ puffs.push({x:x,y:y,vx:vx,vy:vy,s:rnd(9,20)*dpr,a:0.62}); }
+function addPuff(x,y,vx,vy,col,sz){ puffs.push({x:x,y:y,vx:vx,vy:vy,s:(sz||rnd(9,20))*dpr,a:0.62,c:col||"#e6eef8"}); }
 function drawParticles(dt){
   for(var i=puffs.length-1;i>=0;i--){ var p=puffs[i]; p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.s+=0.5*dt/16;p.a-=0.008*dt/16;
     if(p.a<=0){puffs.splice(i,1);continue;}
-    ctx.globalAlpha=p.a*0.6; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,6.28); ctx.fillStyle="#e6eef8"; ctx.fill(); }
+    ctx.globalAlpha=p.a*0.6; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,6.28); ctx.fillStyle=p.c; ctx.fill(); }
   for(var i=hearts.length-1;i>=0;i--){ var h=hearts[i]; h.x+=h.vx*dt/16;h.y+=h.vy*dt/16;h.vy-=0.003*dt/16;h.rot+=h.vr*dt/16;h.a-=0.006*dt/16;
     if(h.a<=0){hearts.splice(i,1);continue;}
     ctx.save(); ctx.globalAlpha=clamp(h.a,0,1); ctx.translate(h.x,h.y); ctx.rotate(h.rot);
@@ -175,45 +175,26 @@ function frame(now){
   // фон-варп: точка схода смещается по направлению -> «несёмся» в разные стороны
   drawWarp(dt, now, W/2 + fdx*W*0.26, H*0.5 + fdy*H*0.26);
 
-  // ===== ПЛОСКАЯ ДНК-КОСИЧКА вдоль направления полёта (как на рисунке) =====
-  var Cx=W/2 + Math.sin(now*0.00009)*W*0.04, Cy=H*0.5 + Math.cos(now*0.00011)*H*0.04;
-  var px=-fdy, py=fdx;                                  // перпендикуляр к оси
-  var s=Math.min(W,H)*0.062, mn=Math.min(W,H);
-  var amp=mn*0.12, waveK=2*Math.PI/(mn*0.42);           // амплитуда и шаг витков
-  var step=Math.max(5,mn*0.010), N=Math.ceil(Math.max(W,H)*1.3/step);
-  var ph=t*0.0023;
-  var P0x=Cx + fdx*mn*0.06, P0y=Cy + fdy*mn*0.06;       // «голова» косички (чуть впереди)
-  var farx=P0x - fdx*N*step, fary=P0y - fdy*N*step;
+  // ===== ТРАЕКТОРИЯ: WALL·E и EVE вьются друг вокруг друга — воблинг+рандом, ШИРЕ, без ДНК =====
+  var mn=Math.min(W,H), s=mn*0.062, px=-fdy, py=fdx;
+  function wob(sd){ return Math.sin(t*0.00128+sd)*0.6 + Math.sin(t*0.00071+sd*2.1)*0.3 + Math.sin(t*0.00207+sd*3.7)*0.15; }
+  var Cx=W/2 + W*0.12*wob(5.0), Cy=H*0.5 + H*0.10*wob(8.3);          // центр гуляет ШИРЕ
+  var ph=t*0.0021 + 0.85*Math.sin(t*0.00085);                        // неравномерное кружение
+  var amp=mn*0.23*(0.7+0.5*Math.sin(t*0.0006+1.0));                  // широкая воблящая амплитуда
+  var offE=amp*Math.sin(ph);
+  var ex=Cx + px*offE + px*mn*0.06*wob(1.3) + fdx*mn*0.07*wob(2.7);
+  var ey=Cy + py*offE + py*mn*0.06*wob(1.3) + fdy*mn*0.07*wob(2.7);
+  var offW=-amp*Math.sin(ph + 0.5*Math.sin(t*0.0005));               // WALL·E противоположно + свой сдвиг
+  var wx=Cx + px*offW + px*mn*0.06*wob(4.1) + fdx*mn*0.07*wob(6.2);
+  var wy=Cy + py*offW + py*mn*0.06*wob(4.1) + fdy*mn*0.07*wob(6.2);
+  var eveTilt=Math.sin(ph)*0.25 + 0.12*wob(3.0), walTilt=t*0.0006 + Math.sin(ph)*0.4;
 
-  function strand(sign,col,a35,a0){
-    var gr=ctx.createLinearGradient(P0x,P0y,farx,fary);
-    gr.addColorStop(0,col); gr.addColorStop(0.7,a35); gr.addColorStop(1,a0);
-    ctx.strokeStyle=gr; ctx.lineWidth=2.6*dpr; ctx.lineCap="round"; ctx.shadowColor=col; ctx.shadowBlur=7*dpr;
-    ctx.beginPath();
-    for(var k=0;k<=N;k++){ var d=k*step, off=amp*Math.sin(ph + d*waveK)*sign;
-      var x=P0x - fdx*d + px*off, y=P0y - fdy*d + py*off;
-      if(k===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-    ctx.stroke(); ctx.shadowBlur=0;
+  // следы показывают траекторию (без линий ДНК): газ за WALL·E + голубой за EVE + сердечки
+  if(!RM){
+    for(var q=0;q<3;q++) addPuff(wx-fdx*s*0.5+rnd(-6,6), wy-fdy*s*0.5+rnd(-6,6), -fdx*2.0*dpr+rnd(-0.6,0.6), -fdy*2.0*dpr+rnd(-0.6,0.6));
+    if(Math.random()<0.85) addPuff(ex-fdx*s*0.3+rnd(-4,4), ey-fdy*s*0.3+rnd(-4,4), -fdx*1.6*dpr+rnd(-0.5,0.5), -fdy*1.6*dpr+rnd(-0.5,0.5), "rgba(150,210,255,1)", rnd(4,9));
+    if(Math.random()<0.16) addHeart((ex+wx)/2+rnd(-10,10),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,14)*dpr);
   }
-  strand( 1,"rgba(120,210,255,1)","rgba(120,210,255,0.35)","rgba(120,210,255,0)");  // нить EVE
-  strand(-1,"rgba(255,165,120,1)","rgba(255,165,120,0.35)","rgba(255,165,120,0)");  // нить WALL·E
-  // перекладины ДНК
-  ctx.lineWidth=1.6*dpr;
-  for(var k=3;k<=N;k+=7){ var d=k*step, off=amp*Math.sin(ph+d*waveK);
-    ctx.globalAlpha=clamp(1-d/(N*step),0,1)*0.4; ctx.strokeStyle="#cfe6ff";
-    ctx.beginPath(); ctx.moveTo(P0x-fdx*d+px*off,P0y-fdy*d+py*off); ctx.lineTo(P0x-fdx*d-px*off,P0y-fdy*d-py*off); ctx.stroke(); }
-  ctx.globalAlpha=1;
-
-  // роботы — на головах нитей
-  var offH=amp*Math.sin(ph);
-  var ex=P0x+px*offH, ey=P0y+py*offH;     // EVE на «+» нити
-  var wx=P0x-px*offH, wy=P0y-py*offH;      // WALL·E на «−» нити
-  var eveTilt=Math.sin(ph)*0.2, walTilt=t*0.0006 + Math.sin(ph)*0.35;
-
-  // сильный газ-след за WALL·E — назад по оси (за косичкой)
-  if(!winit){ pwx=wx; pwy=wy; winit=true; } pwx=wx; pwy=wy;
-  if(!RM){ for(var q=0;q<3;q++){ addPuff(wx-fdx*s*0.5+rnd(-6,6), wy-fdy*s*0.5+rnd(-6,6), -fdx*2.0*dpr+rnd(-0.6,0.6), -fdy*2.0*dpr+rnd(-0.6,0.6)); } }
-  if(!RM && Math.random()<0.16){ addHeart((ex+wx)/2+rnd(-10,10),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,14)*dpr); }
   drawParticles(dt);
 
   drawWalle(wx,wy,s,walTilt); drawEve(ex,ey,s,eveTilt);
