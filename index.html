@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Define Dancing ✦</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#070b18">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%A4%8D%3C/text%3E%3C/svg%3E">
+<style>
+  :root{ --ink:#eaf2ff; --soft:#9fd0ff; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#05070f;overflow:hidden}
+  body{font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}
+  #sky{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:pointer;touch-action:manipulation}
+
+  #cap{position:fixed;left:0;right:0;bottom:max(5vh,26px);text-align:center;pointer-events:none;
+    opacity:0;transform:translateY(12px);transition:opacity 2s ease, transform 2s ease;padding:0 18px}
+  #cap.show{opacity:1;transform:none}
+  #cap .tag{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(10px,2vw,13px);
+    letter-spacing:.45em;text-transform:uppercase;color:var(--soft);opacity:.8;margin-bottom:.7em}
+  #cap h1{margin:0 auto;max-width:22ch;font-size:clamp(19px,3.4vw,34px);font-weight:700;font-style:italic;
+    line-height:1.35;text-shadow:0 2px 26px rgba(0,0,0,.8),0 0 22px rgba(80,180,255,.25)}
+
+  #hint{position:fixed;left:0;right:0;top:max(4vh,18px);text-align:center;pointer-events:none;
+    font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+    color:rgba(180,215,255,.45);opacity:0;transition:opacity 1s ease}
+  #hint.show{opacity:1}
+
+  .ctl{position:fixed;z-index:5;border:1px solid rgba(150,200,255,.25);background:rgba(120,180,255,.08);
+    color:var(--soft);border-radius:50%;width:42px;height:42px;cursor:pointer;backdrop-filter:blur(6px);
+    font-size:17px;display:flex;align-items:center;justify-content:center;transition:.25s}
+  .ctl:hover{color:#fff;border-color:#7fc4ff;box-shadow:0 0 20px rgba(120,190,255,.3)}
+  #music{right:16px;bottom:16px}
+
+  #loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--soft);
+    font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.3em;text-transform:uppercase}
+  #loader.hide{opacity:0;transition:opacity .6s ease;pointer-events:none}
+</style>
+</head>
+<body>
+  <canvas id="sky"></canvas>
+  <div id="hint"><span>нажми — закружиться вальс</span></div>
+  <div id="cap"><div class="tag">✦ define dancing ✦</div><h1 id="capH"></h1></div>
+  <button id="music" class="ctl" aria-label="музыка" title="музыка">♪</button>
+  <div id="loader">boot · EVE · WALL·E</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =======================================================================
+   НАСТРОЙКИ — РЕДАКТИРУЙ ЗДЕСЬ
+   • MESSAGE — личная подпись (\n = перенос строки).
+   • INITIALS — буквы в сердечке, которое ВАЛЛ·И дарит EVE (напр. "Д" и "А").
+                оставь пустыми ("") чтобы сердечко было без букв.
+   • DATE_TEXT — особенная дата/слово созвездием среди звёзд ("" = выкл).
+   ======================================================================= */
+var CONFIG = {
+  MESSAGE: "куда бы ты ни улетела —\nя танцую только с тобой",
+  INITIALS: { him: "", her: "" },     // напр. {him:"Д", her:"А"}
+  DATE_TEXT: "",                       // напр. "07·09" — появится как созвездие
+  ACCENT_EVE: "#37c8ff",
+  ACCENT_HEART: "#ff5f8d"
+};
+/* =======================  КОНЕЦ НАСТРОЕК  ============================== */
+
+var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+var cv=document.getElementById("sky"), ctx=cv.getContext("2d");
+var capWrap=document.getElementById("cap"), capH=document.getElementById("capH");
+var hint=document.getElementById("hint"), loader=document.getElementById("loader"), musicBtn=document.getElementById("music");
+capH.innerHTML=CONFIG.MESSAGE.split("\n").map(function(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}).join("<br>");
+
+var dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)), W=0,H=0;
+function rnd(a,b){return a+Math.random()*(b-a);}
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();ctx.fill();}
+function heartPath(s){ctx.beginPath();ctx.moveTo(0,s*0.32);ctx.bezierCurveTo(s*0.05,s*0.05,s*0.5,s*0.02,s*0.5,s*0.32);ctx.bezierCurveTo(s*0.5,s*0.6,s*0.12,s*0.78,0,s);ctx.bezierCurveTo(-s*0.12,s*0.78,-s*0.5,s*0.6,-s*0.5,s*0.32);ctx.bezierCurveTo(-s*0.5,s*0.02,-s*0.05,s*0.05,0,s*0.32);ctx.closePath();}
+
+/* ---------- звёзды + созвездие-дата ---------- */
+var stars=[], dateStars=[];
+function makeStars(){
+  stars=[]; var n=clamp(Math.round((W*H)/(7000*dpr)),120,520);
+  for(var i=0;i<n;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:rnd(0.4,1.7)*dpr,a:rnd(0.2,1),tw:rnd(0.4,1.5),ph:rnd(0,6.28),hue:Math.random()<0.12});
+  // созвездие из текста даты (точки по «пикселям» текста)
+  dateStars=[];
+  if(CONFIG.DATE_TEXT){
+    var oc=document.createElement("canvas"), ow=420, oh=120; oc.width=ow; oc.height=oh;
+    var ox=oc.getContext("2d"); ox.fillStyle="#fff"; ox.font="bold 70px ui-monospace,monospace";
+    ox.textAlign="center"; ox.textBaseline="middle"; ox.fillText(CONFIG.DATE_TEXT, ow/2, oh/2);
+    var d=ox.getImageData(0,0,ow,oh).data;
+    for(var yy=0; yy<oh; yy+=5){ for(var xx=0; xx<ow; xx+=5){
+      if(d[(yy*ow+xx)*4+3]>120 && Math.random()<0.5){
+        dateStars.push({x:(xx-ow/2), y:(yy-oh/2), ph:rnd(0,6.28)});
+      }
+    }}
+  }
+}
+function drawStars(t){
+  for(var i=0;i<stars.length;i++){ var s=stars[i];
+    var a=RM?s.a*0.7:s.a*(0.5+0.5*Math.sin(t*0.001*s.tw+s.ph));
+    ctx.globalAlpha=clamp(a,0,1); ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.2832);
+    ctx.fillStyle=s.hue?"#bcd6ff":"#ffffff"; ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  if(dateStars.length){
+    var cx=W*0.5, cy=H*0.20, sc=Math.min(W,H)/620;
+    for(var j=0;j<dateStars.length;j++){ var p=dateStars[j];
+      var a2=0.45+0.45*Math.sin(t*0.0016+p.ph);
+      ctx.globalAlpha=clamp(a2,0,1); ctx.beginPath();
+      ctx.arc(cx+p.x*sc, cy+p.y*sc, 1.5*dpr, 0,6.2832);
+      ctx.fillStyle="#cfe6ff"; ctx.shadowColor="#9cc8ff"; ctx.shadowBlur=4*dpr; ctx.fill();
+    }
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+  }
+}
+
+/* ---------- частицы: сердечки и пшик огнетушителя ---------- */
+var hearts=[], puffs=[], sparks=[];
+function addHeart(x,y,vy,sz,withInit){ hearts.push({x:x,y:y,vx:rnd(-0.2,0.2),vy:vy,s:sz,a:1,rot:rnd(-0.3,0.3),vr:rnd(-0.02,0.02),init:!!withInit}); }
+function addPuff(x,y,vx,vy){ puffs.push({x:x,y:y,vx:vx,vy:vy,s:rnd(6,14)*dpr,a:0.5}); }
+function addSpark(x,y){ for(var i=0;i<10;i++){var an=rnd(0,6.28),sp=rnd(1,4)*dpr; sparks.push({x:x,y:y,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,a:1,s:rnd(1.5,3)*dpr});} }
+function drawParticles(dt){
+  for(var i=puffs.length-1;i>=0;i--){ var p=puffs[i]; p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.s+=0.4*dt/16;p.a-=0.012*dt/16;
+    if(p.a<=0){puffs.splice(i,1);continue;}
+    ctx.globalAlpha=p.a*0.6; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,6.28); ctx.fillStyle="#dfe9f5"; ctx.fill(); }
+  for(var i=sparks.length-1;i>=0;i--){ var k=sparks[i]; k.x+=k.vx*dt/16;k.y+=k.vy*dt/16;k.a-=0.03*dt/16;
+    if(k.a<=0){sparks.splice(i,1);continue;}
+    ctx.globalAlpha=k.a; ctx.beginPath(); ctx.arc(k.x,k.y,k.s,0,6.28); ctx.fillStyle="#bff0ff"; ctx.shadowColor="#7fe3ff"; ctx.shadowBlur=6*dpr; ctx.fill(); ctx.shadowBlur=0; }
+  for(var i=hearts.length-1;i>=0;i--){ var h=hearts[i]; h.x+=h.vx*dt/16;h.y+=h.vy*dt/16;h.vy-=0.004*dt/16;h.rot+=h.vr*dt/16;h.a-=0.006*dt/16;
+    if(h.a<=0){hearts.splice(i,1);continue;}
+    ctx.save(); ctx.globalAlpha=clamp(h.a,0,1); ctx.translate(h.x,h.y); ctx.rotate(h.rot);
+    ctx.fillStyle=CONFIG.ACCENT_HEART; ctx.shadowColor=CONFIG.ACCENT_HEART; ctx.shadowBlur=10*dpr; heartPath(h.s); ctx.shadowBlur=0;
+    if(h.init && (CONFIG.INITIALS.him||CONFIG.INITIALS.her)){
+      ctx.fillStyle="#fff"; ctx.font="bold "+(h.s*0.5)+"px ui-sans-serif,system-ui"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText((CONFIG.INITIALS.him||"")+(CONFIG.INITIALS.him&&CONFIG.INITIALS.her?"·":"")+(CONFIG.INITIALS.her||""), 0, h.s*0.42);
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
+}
+
+/* ---------- EVE ---------- */
+function drawEve(x,y,s,tilt,t){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+  var g=ctx.createRadialGradient(0,0,0,0,0,s*1.7);
+  g.addColorStop(0,"rgba(120,200,255,0.28)"); g.addColorStop(1,"rgba(120,200,255,0)");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,s*1.7,0,6.28); ctx.fill();
+  // тело — белая капсула
+  ctx.fillStyle="#eef3f9"; ctx.beginPath(); ctx.ellipse(0,0,s*0.62,s*0.95,0,0,6.28); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,0.85)"; ctx.beginPath(); ctx.ellipse(-s*0.16,-s*0.22,s*0.3,s*0.5,0,0,6.28); ctx.fill();
+  ctx.fillStyle="rgba(150,180,210,0.35)"; ctx.beginPath(); ctx.ellipse(s*0.2,s*0.18,s*0.26,s*0.42,0,0,6.28); ctx.fill();
+  // визор
+  ctx.fillStyle="#0a0e15"; ctx.beginPath(); ctx.ellipse(0,-s*0.16,s*0.52,s*0.36,0,0,6.28); ctx.fill();
+  // глаза (синие, чуть под углом, «довольные»)
+  ctx.fillStyle=CONFIG.ACCENT_EVE; ctx.shadowColor=CONFIG.ACCENT_EVE; ctx.shadowBlur=s*0.32;
+  for(var sgn=-1;sgn<=1;sgn+=2){
+    ctx.save(); ctx.translate(sgn*s*0.18,-s*0.16); ctx.rotate(sgn*0.32);
+    ctx.beginPath(); ctx.ellipse(0,0,s*0.055,s*0.15,0,0,6.28); ctx.fill(); ctx.restore();
+  }
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+
+/* ---------- WALL·E ---------- */
+function drawWalle(x,y,s,tilt,t){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+  // тени-гусеницы
+  ctx.fillStyle="#34343a"; rrect(-s*0.58,s*0.42,s*0.46,s*0.5,s*0.13); rrect(s*0.12,s*0.42,s*0.46,s*0.5,s*0.13);
+  ctx.fillStyle="#1d1d20"; rrect(-s*0.5,s*0.55,s*0.3,s*0.24,s*0.08); rrect(s*0.2,s*0.55,s*0.3,s*0.24,s*0.08);
+  // тело
+  ctx.fillStyle="#c9a24f"; rrect(-s*0.5,-s*0.18,s*1.0,s*0.72,s*0.1);
+  ctx.fillStyle="#b78a37"; rrect(-s*0.42,s*0.06,s*0.84,s*0.3,s*0.06);
+  ctx.fillStyle="#6f5320"; rrect(-s*0.24,s*0.1,s*0.48,s*0.2,s*0.04);
+  ctx.fillStyle="#caa54f"; ctx.font="bold "+(s*0.12)+"px ui-monospace,monospace"; ctx.textAlign="center"; ctx.fillText("WALL·E", 0, s*0.04);
+  // шея
+  ctx.fillStyle="#8a8a90"; ctx.fillRect(-s*0.05,-s*0.4,s*0.1,s*0.24);
+  // рука с огнетушителем (правая)
+  ctx.strokeStyle="#8a8a90"; ctx.lineWidth=s*0.07; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(s*0.42,0); ctx.lineTo(s*0.72,-s*0.05); ctx.stroke();
+  ctx.fillStyle="#d2402f"; rrect(s*0.66,-s*0.26,s*0.16,s*0.34,s*0.05);
+  ctx.fillStyle="#9aa0a6"; ctx.fillRect(s*0.71,-s*0.34,s*0.06,s*0.1);
+  // голова-бинокль
+  ctx.save(); ctx.translate(0,-s*0.48);
+  ctx.fillStyle="#9aa0a6"; rrect(-s*0.48,-s*0.17,s*0.96,s*0.32,s*0.15);
+  for(var sgn=-1;sgn<=1;sgn+=2){
+    ctx.fillStyle="#c9ced3"; ctx.beginPath(); ctx.arc(sgn*s*0.27,0,s*0.18,0,6.28); ctx.fill();
+    ctx.fillStyle="#0f0f12"; ctx.beginPath(); ctx.arc(sgn*s*0.27,0,s*0.105,0,6.28); ctx.fill();
+    ctx.fillStyle="#bfeaff"; ctx.beginPath(); ctx.arc(sgn*s*0.27+s*0.035,-s*0.025,s*0.04,0,6.28); ctx.fill();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+/* ---------- ТАНЕЦ ---------- */
+var raf=null, startT=null, lastNow=0, captionShown=false, flourish=0, spinPhase=0;
+function frame(now){
+  if(startT==null){ startT=now; lastNow=now; }
+  var t=now-startT, dt=clamp(now-lastNow,0,50); lastNow=now;
+  // фон
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#070b1a"); g.addColorStop(0.55,"#0a1024"); g.addColorStop(1,"#120a22");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // далёкое сияние (как иллюминатор корабля)
+  var sg=ctx.createRadialGradient(W*0.5,H*0.5,0,W*0.5,H*0.5,Math.max(W,H)*0.6);
+  sg.addColorStop(0,"rgba(60,90,160,0.18)"); sg.addColorStop(1,"rgba(60,90,160,0)");
+  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+  drawStars(now);
+
+  // плавно гаснет вспышка-ускорение от клика
+  if(flourish>0) flourish=Math.max(0,flourish-dt*0.0011);
+  var speed=0.0010*(1+flourish*2.2);
+  spinPhase += (RM?0.0004:speed)*dt;
+
+  var Cx=W/2 + Math.sin(now*0.00012)*W*0.10;
+  var Cy=H*0.52 + Math.cos(now*0.00016)*H*0.07;
+  var pulse=1 - 0.18*Math.sin(now*0.0009) - flourish*0.35;       // дыхание орбиты + сближение на вспышке
+  var R=Math.min(W,H)*0.17*pulse;
+  var s=Math.min(W,H)*0.072;                                     // размер роботов
+
+  var a=spinPhase;
+  var ex=Cx+Math.cos(a)*R,           ey=Cy+Math.sin(a)*R*0.78;
+  var wx=Cx+Math.cos(a+Math.PI)*R,   wy=Cy+Math.sin(a+Math.PI)*R*0.78;
+
+  // лёгкий наклон в сторону движения + покачивание
+  var eveTilt=Math.sin(a)*0.12 + Math.sin(now*0.002)*0.04;
+  var walTilt=Math.sin(a+Math.PI)*0.18 + Math.sin(now*0.0031)*0.08;
+
+  // пшик огнетушителя WALL·E (по ходу — назад)
+  if(!RM && Math.random()<0.4){
+    var dirx=-Math.sin(a+Math.PI), diry=Math.cos(a+Math.PI);
+    addPuff(wx+dirx*s*0.7+s*0.7, wy+diry*s*0.7, dirx*1.4*dpr+rnd(-0.5,0.5), diry*1.4*dpr+rnd(-0.5,0.5)+0.3);
+  }
+  // след из сердечек между партнёрами
+  if(!RM && Math.random()<0.18){ addHeart((ex+wx)/2+rnd(-10,10), (ey+wy)/2, -rnd(0.4,0.9)*dpr, rnd(8,14)*dpr, false); }
+
+  drawParticles(dt);
+
+  // соединяющая «искра рук», когда близко
+  var dist=Math.hypot(ex-wx,ey-wy);
+  if(dist < R*1.2){
+    ctx.globalAlpha=clamp(1-dist/(R*1.3),0,1)*0.6;
+    ctx.strokeStyle="#bff0ff"; ctx.lineWidth=2*dpr; ctx.shadowColor="#7fe3ff"; ctx.shadowBlur=10*dpr;
+    ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(wx,wy); ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=1;
+  }
+
+  // порядок отрисовки по глубине (кто ниже — ближе)
+  if(ey>=wy){ drawWalle(wx,wy,s,walTilt,now); drawEve(ex,ey,s,eveTilt,now); }
+  else { drawEve(ex,ey,s,eveTilt,now); drawWalle(wx,wy,s,walTilt,now); }
+
+  if(t>2600 && !captionShown){ captionShown=true; capWrap.classList.add("show"); hint.classList.add("show"); }
+  raf=requestAnimationFrame(frame);
+}
+
+/* клик — вальс закружится быстрее + всплеск сердец (+ сердце с инициалами) */
+function flourishNow(cx,cy){
+  flourish=1;
+  var bx=W/2, by=H*0.52;
+  for(var i=0;i<16;i++){ addHeart(bx+rnd(-30,30), by+rnd(-20,20), -rnd(0.6,1.6)*dpr, rnd(10,20)*dpr, false); }
+  addSpark(bx,by);
+  // дарёное сердце с инициалами — крупное, вверх
+  if(CONFIG.INITIALS.him||CONFIG.INITIALS.her) addHeart(bx, by-10, -1.1*dpr, Math.min(W,H)*0.07, true);
+  if(musicEnabled) blip();
+}
+
+function sizeCanvas(){ var cssW=window.innerWidth,cssH=window.innerHeight;
+  W=Math.round(cssW*dpr); H=Math.round(cssH*dpr); cv.width=W; cv.height=H; cv.style.width=cssW+"px"; cv.style.height=cssH+"px"; makeStars(); }
+window.addEventListener("resize", function(){ var p=sizeTimer; if(p)clearTimeout(p); sizeTimer=setTimeout(sizeCanvas,200); });
+var sizeTimer=null;
+cv.addEventListener("click", function(e){ var r=cv.getBoundingClientRect(); flourishNow((e.clientX-r.left)*dpr,(e.clientY-r.top)*dpr); });
+
+/* ---------- нежная музыка-вальс (Web Audio, по кнопке) ---------- */
+var actx=null, musicEnabled=false, musicTimer=null, master=null, beat=0;
+function ensureAudio(){ try{ var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false; if(!actx){actx=new AC(); master=actx.createGain(); master.gain.value=0.0; master.connect(actx.destination);} return true; }catch(e){ return false; } }
+function tone(f,t,dur,vol,type){ try{ var o=actx.createOscillator(),gn=actx.createGain(); o.type=type||"sine"; o.frequency.value=f;
+  gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(vol,t+0.04); gn.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(gn).connect(master); o.start(t); o.stop(t+dur+0.03);}catch(e){} }
+function blip(){ if(!ensureAudio())return; try{actx.resume();}catch(e){} tone(880,actx.currentTime,0.5,0.18,"triangle"); }
+function startMusic(){ if(!ensureAudio()) return; try{ if(actx.state==="suspended") actx.resume(); }catch(e){}
+  master.gain.cancelScheduledValues(actx.currentTime); master.gain.linearRampToValueAtTime(0.16,actx.currentTime+1.2);
+  var scale=[392,440,523,587,659,784], step=0;
+  function loop(){ var base=actx.currentTime; beat=(beat+1)%3;
+    if(beat===0){ tone(196,base,0.5,0.22,"sine"); tone(scale[step%scale.length],base,0.9,0.14,"triangle"); step++; }
+    else { tone(scale[(step+beat)%scale.length],base,0.5,0.08,"sine"); }
+    musicTimer=setTimeout(loop, 430); }
+  loop(); musicEnabled=true; musicBtn.style.color="#fff"; musicBtn.style.borderColor="#7fc4ff";
+}
+function stopMusic(){ musicEnabled=false; if(musicTimer){clearTimeout(musicTimer);musicTimer=null;}
+  if(master&&actx){ try{ master.gain.cancelScheduledValues(actx.currentTime); master.gain.linearRampToValueAtTime(0.0001,actx.currentTime+0.5);}catch(e){} }
+  musicBtn.style.color=""; musicBtn.style.borderColor=""; }
+musicBtn.addEventListener("click", function(e){ e.stopPropagation(); if(musicEnabled) stopMusic(); else startMusic(); });
+if(!(window.AudioContext||window.webkitAudioContext)) musicBtn.hidden=true;
+
+/* ---------- старт ---------- */
+sizeCanvas(); loader.classList.add("hide");
+raf=requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
