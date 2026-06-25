@@ -175,29 +175,48 @@ function frame(now){
   // фон-варп: точка схода смещается по направлению -> «несёмся» в разные стороны
   drawWarp(dt, now, W/2 + fdx*W*0.26, H*0.5 + fdy*H*0.26);
 
-  // ДНК-двойная спираль: ось = направление полёта, нити колеблются по перпендикуляру
-  var Cx=W/2 + Math.sin(now*0.00009)*W*0.05, Cy=H*0.52 + Math.cos(now*0.00011)*H*0.05;
-  var px=-fdy, py=fdx;
-  var R=Math.min(W,H)*0.17, s=Math.min(W,H)*0.07, phase=t*0.0026;
-  var cE=Math.cos(phase), dE=Math.sin(phase), cW=-cE, dW=-dE;
-  var ex=Cx+px*R*cE, ey=Cy+py*R*cE, sE=s*(1+0.34*dE);
-  var wx=Cx+px*R*cW, wy=Cy+py*R*cW, sW=s*(1+0.34*dW);
-  var eveTilt=Math.sin(phase)*0.22, walTilt=t*0.0006 + Math.sin(phase)*0.4;
+  // ===== ПЛОСКАЯ ДНК-КОСИЧКА вдоль направления полёта (как на рисунке) =====
+  var Cx=W/2 + Math.sin(now*0.00009)*W*0.04, Cy=H*0.5 + Math.cos(now*0.00011)*H*0.04;
+  var px=-fdy, py=fdx;                                  // перпендикуляр к оси
+  var s=Math.min(W,H)*0.062, mn=Math.min(W,H);
+  var amp=mn*0.12, waveK=2*Math.PI/(mn*0.42);           // амплитуда и шаг витков
+  var step=Math.max(5,mn*0.010), N=Math.ceil(Math.max(W,H)*1.3/step);
+  var ph=t*0.0023;
+  var P0x=Cx + fdx*mn*0.06, P0y=Cy + fdy*mn*0.06;       // «голова» косички (чуть впереди)
+  var farx=P0x - fdx*N*step, fary=P0y - fdy*N*step;
 
-  // СИЛЬНЫЙ след «противогаза/огнетушителя» за WALL·E (против его скорости)
-  if(!winit){ pwx=wx; pwy=wy; winit=true; }
-  var vx=wx-pwx, vy=wy-pwy, vl=Math.hypot(vx,vy)||1; pwx=wx; pwy=wy;
-  if(!RM){ for(var q=0;q<3;q++){ addPuff(wx-(vx/vl)*s*0.7+rnd(-6,6), wy-(vy/vl)*s*0.7+rnd(-6,6), -(vx/vl)*2.2*dpr+rnd(-0.5,0.5), -(vy/vl)*2.2*dpr+rnd(-0.5,0.5)); } }
-  if(!RM && Math.random()<0.16){ addHeart((ex+wx)/2+rnd(-12,12),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,15)*dpr); }
+  function strand(sign,col,a35,a0){
+    var gr=ctx.createLinearGradient(P0x,P0y,farx,fary);
+    gr.addColorStop(0,col); gr.addColorStop(0.7,a35); gr.addColorStop(1,a0);
+    ctx.strokeStyle=gr; ctx.lineWidth=2.6*dpr; ctx.lineCap="round"; ctx.shadowColor=col; ctx.shadowBlur=7*dpr;
+    ctx.beginPath();
+    for(var k=0;k<=N;k++){ var d=k*step, off=amp*Math.sin(ph + d*waveK)*sign;
+      var x=P0x - fdx*d + px*off, y=P0y - fdy*d + py*off;
+      if(k===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke(); ctx.shadowBlur=0;
+  }
+  strand( 1,"rgba(120,210,255,1)","rgba(120,210,255,0.35)","rgba(120,210,255,0)");  // нить EVE
+  strand(-1,"rgba(255,165,120,1)","rgba(255,165,120,0.35)","rgba(255,165,120,0)");  // нить WALL·E
+  // перекладины ДНК
+  ctx.lineWidth=1.6*dpr;
+  for(var k=3;k<=N;k+=7){ var d=k*step, off=amp*Math.sin(ph+d*waveK);
+    ctx.globalAlpha=clamp(1-d/(N*step),0,1)*0.4; ctx.strokeStyle="#cfe6ff";
+    ctx.beginPath(); ctx.moveTo(P0x-fdx*d+px*off,P0y-fdy*d+py*off); ctx.lineTo(P0x-fdx*d-px*off,P0y-fdy*d-py*off); ctx.stroke(); }
+  ctx.globalAlpha=1;
+
+  // роботы — на головах нитей
+  var offH=amp*Math.sin(ph);
+  var ex=P0x+px*offH, ey=P0y+py*offH;     // EVE на «+» нити
+  var wx=P0x-px*offH, wy=P0y-py*offH;      // WALL·E на «−» нити
+  var eveTilt=Math.sin(ph)*0.2, walTilt=t*0.0006 + Math.sin(ph)*0.35;
+
+  // сильный газ-след за WALL·E — назад по оси (за косичкой)
+  if(!winit){ pwx=wx; pwy=wy; winit=true; } pwx=wx; pwy=wy;
+  if(!RM){ for(var q=0;q<3;q++){ addPuff(wx-fdx*s*0.5+rnd(-6,6), wy-fdy*s*0.5+rnd(-6,6), -fdx*2.0*dpr+rnd(-0.6,0.6), -fdy*2.0*dpr+rnd(-0.6,0.6)); } }
+  if(!RM && Math.random()<0.16){ addHeart((ex+wx)/2+rnd(-10,10),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,14)*dpr); }
   drawParticles(dt);
 
-  var dist=Math.hypot(ex-wx,ey-wy);
-  if(dist < s*2.2){ ctx.globalAlpha=clamp(1-dist/(s*2.4),0,1)*0.6; ctx.strokeStyle="#bff0ff"; ctx.lineWidth=2*dpr;
-    ctx.shadowColor="#7fe3ff"; ctx.shadowBlur=10*dpr; ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(wx,wy); ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=1; }
-
-  // порядок по глубине нитей ДНК (кто впереди — крупнее и поверх)
-  if(dE>=dW){ drawWalle(wx,wy,sW,walTilt); drawEve(ex,ey,sE,eveTilt); }
-  else { drawEve(ex,ey,sE,eveTilt); drawWalle(wx,wy,sW,walTilt); }
+  drawWalle(wx,wy,s,walTilt); drawEve(ex,ey,s,eveTilt);
 
   if(t>2200 && !captionShown){ captionShown=true; capWrap.classList.add("show"); holo.classList.add("show"); }
   raf=requestAnimationFrame(frame);
