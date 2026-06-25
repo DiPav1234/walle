@@ -161,19 +161,17 @@ function drawWalle(x,y,s,tilt){
 /* ---------- сцена ---------- */
 var raf=null, startT=null, lastNow=0, captionShown=false;
 var pwx=0,pwy=0, winit=false, eTrail=[];
-function drawNeonTrail(pts){
-  if(pts.length<2) return;
+function drawNeonTrail(pts,scl){
+  if(pts.length<2) return; scl=scl||1;
   var hx=pts[pts.length-1].x, hy=pts[pts.length-1].y, tx=pts[0].x, ty=pts[0].y;
   ctx.lineJoin="round"; ctx.lineCap="round";
-  // мягкое неоновое свечение
   var g1=ctx.createLinearGradient(tx,ty,hx,hy);
   g1.addColorStop(0,"rgba(70,225,255,0)"); g1.addColorStop(1,"rgba(70,225,255,0.5)");
-  ctx.strokeStyle=g1; ctx.lineWidth=11*dpr; ctx.shadowColor="#46e1ff"; ctx.shadowBlur=20*dpr;
+  ctx.strokeStyle=g1; ctx.lineWidth=11*dpr*scl; ctx.shadowColor="#46e1ff"; ctx.shadowBlur=20*dpr;
   ctx.beginPath(); for(var i=0;i<pts.length;i++){ if(i===0)ctx.moveTo(pts[i].x,pts[i].y); else ctx.lineTo(pts[i].x,pts[i].y); } ctx.stroke();
-  // яркое ядро
   var g2=ctx.createLinearGradient(tx,ty,hx,hy);
   g2.addColorStop(0,"rgba(225,250,255,0)"); g2.addColorStop(1,"rgba(225,250,255,0.95)");
-  ctx.strokeStyle=g2; ctx.lineWidth=2.4*dpr; ctx.shadowColor="#aef2ff"; ctx.shadowBlur=8*dpr;
+  ctx.strokeStyle=g2; ctx.lineWidth=2.4*dpr*scl; ctx.shadowColor="#aef2ff"; ctx.shadowBlur=8*dpr;
   ctx.beginPath(); for(var i=0;i<pts.length;i++){ if(i===0)ctx.moveTo(pts[i].x,pts[i].y); else ctx.lineTo(pts[i].x,pts[i].y); } ctx.stroke();
   ctx.shadowBlur=0;
 }
@@ -204,6 +202,10 @@ function frame(now){
   var wx=Cx + px*offW + px*mn*0.06*wob(4.1) + fdx*mn*0.07*wob(6.2);
   var wy=Cy + py*offW + py*mn*0.06*wob(4.1) + fdy*mn*0.07*wob(6.2);
   var eveTilt=Math.sin(ph)*0.25 + 0.12*wob(3.0), walTilt=t*0.0006 + Math.sin(ph)*0.4;
+  // 3D-глубина: то приближаются (крупнее), то отдаляются (мельче) + общий зум-дыхание
+  var gz=1+0.25*Math.sin(t*0.0005);
+  var dE=Math.sin(ph*0.85+0.6), dW=Math.sin(ph*0.85+0.6+Math.PI);
+  var sE=s*gz*(1+0.5*dE), sW=s*gz*(1+0.5*dW);
 
   // следы показывают траекторию (без линий ДНК): газ за WALL·E + голубой за EVE + сердечки
   if(!RM){
@@ -213,9 +215,11 @@ function frame(now){
   drawParticles(dt);
   // неоновый хай-тек след EVE
   eTrail.push({x:ex,y:ey}); if(eTrail.length>56) eTrail.shift();
-  drawNeonTrail(eTrail);
+  drawNeonTrail(eTrail, sE/s);
 
-  drawWalle(wx,wy,s,walTilt); drawEve(ex,ey,s,eveTilt);
+  // ближний (крупнее) рисуется поверх
+  if(sE>=sW){ drawWalle(wx,wy,sW,walTilt); drawEve(ex,ey,sE,eveTilt); }
+  else { drawEve(ex,ey,sE,eveTilt); drawWalle(wx,wy,sW,walTilt); }
 
   if(t>2200 && !captionShown){ captionShown=true; capWrap.classList.add("show"); holo.classList.add("show"); }
   raf=requestAnimationFrame(frame);
