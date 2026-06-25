@@ -160,7 +160,23 @@ function drawWalle(x,y,s,tilt){
 
 /* ---------- сцена ---------- */
 var raf=null, startT=null, lastNow=0, captionShown=false;
-var pwx=0,pwy=0, winit=false;
+var pwx=0,pwy=0, winit=false, eTrail=[];
+function drawNeonTrail(pts){
+  if(pts.length<2) return;
+  var hx=pts[pts.length-1].x, hy=pts[pts.length-1].y, tx=pts[0].x, ty=pts[0].y;
+  ctx.lineJoin="round"; ctx.lineCap="round";
+  // мягкое неоновое свечение
+  var g1=ctx.createLinearGradient(tx,ty,hx,hy);
+  g1.addColorStop(0,"rgba(70,225,255,0)"); g1.addColorStop(1,"rgba(70,225,255,0.5)");
+  ctx.strokeStyle=g1; ctx.lineWidth=11*dpr; ctx.shadowColor="#46e1ff"; ctx.shadowBlur=20*dpr;
+  ctx.beginPath(); for(var i=0;i<pts.length;i++){ if(i===0)ctx.moveTo(pts[i].x,pts[i].y); else ctx.lineTo(pts[i].x,pts[i].y); } ctx.stroke();
+  // яркое ядро
+  var g2=ctx.createLinearGradient(tx,ty,hx,hy);
+  g2.addColorStop(0,"rgba(225,250,255,0)"); g2.addColorStop(1,"rgba(225,250,255,0.95)");
+  ctx.strokeStyle=g2; ctx.lineWidth=2.4*dpr; ctx.shadowColor="#aef2ff"; ctx.shadowBlur=8*dpr;
+  ctx.beginPath(); for(var i=0;i<pts.length;i++){ if(i===0)ctx.moveTo(pts[i].x,pts[i].y); else ctx.lineTo(pts[i].x,pts[i].y); } ctx.stroke();
+  ctx.shadowBlur=0;
+}
 // направление полёта хаотично меняется; и ФОН, и ДНК-спираль слушают его
 function flowAng(t){ return 1.35*Math.sin(t*0.00016) + 0.9*Math.sin(t*0.00029+1.1) + 0.55*Math.sin(t*0.000071+2.3); }
 function frame(now){
@@ -192,10 +208,12 @@ function frame(now){
   // следы показывают траекторию (без линий ДНК): газ за WALL·E + голубой за EVE + сердечки
   if(!RM){
     for(var q=0;q<3;q++) addPuff(wx-fdx*s*0.5+rnd(-6,6), wy-fdy*s*0.5+rnd(-6,6), -fdx*2.0*dpr+rnd(-0.6,0.6), -fdy*2.0*dpr+rnd(-0.6,0.6));
-    if(Math.random()<0.85) addPuff(ex-fdx*s*0.3+rnd(-4,4), ey-fdy*s*0.3+rnd(-4,4), -fdx*1.6*dpr+rnd(-0.5,0.5), -fdy*1.6*dpr+rnd(-0.5,0.5), "rgba(150,210,255,1)", rnd(4,9));
     if(Math.random()<0.16) addHeart((ex+wx)/2+rnd(-10,10),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,14)*dpr);
   }
   drawParticles(dt);
+  // неоновый хай-тек след EVE
+  eTrail.push({x:ex,y:ey}); if(eTrail.length>56) eTrail.shift();
+  drawNeonTrail(eTrail);
 
   drawWalle(wx,wy,s,walTilt); drawEve(ex,ey,s,eveTilt);
 
