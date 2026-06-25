@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Define Dancing ✦</title>
+<title>Анька космос просто</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#05070f">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=VT323&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%A4%8D%3C/text%3E%3C/svg%3E">
 <style>
   :root{ --ink:#eaf2ff; --soft:#9fd0ff; --holo:#46ffae; }
@@ -20,9 +22,9 @@
   #holo.show{opacity:1}
   #holo .hl{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(9px,1.8vw,12px);
     letter-spacing:.5em;color:var(--holo);opacity:.85;text-shadow:0 0 8px var(--holo)}
-  #tmr{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;
-    font-size:clamp(22px,5vw,46px);letter-spacing:.12em;color:var(--holo);
-    text-shadow:0 0 10px rgba(70,255,174,.9),0 0 26px rgba(70,255,174,.45);margin:.18em 0}
+  #tmr{font-family:"VT323",ui-monospace,monospace;font-weight:400;
+    font-size:clamp(36px,9vw,88px);letter-spacing:.04em;color:var(--holo);
+    text-shadow:0 0 10px rgba(70,255,174,.9),0 0 28px rgba(70,255,174,.55);margin:0}
   #holo .hd{font-family:ui-monospace,monospace;font-size:clamp(9px,1.6vw,12px);
     letter-spacing:.4em;color:var(--holo);opacity:.6;text-shadow:0 0 6px var(--holo)}
   @keyframes flick{0%,96%,100%{filter:brightness(1)}97%{filter:brightness(1.4)}98%{filter:brightness(.78)}99%{filter:brightness(1.2)}}
@@ -32,8 +34,9 @@
   #cap.show{opacity:1;transform:none}
   #cap .tag{font-family:ui-monospace,monospace;font-size:clamp(9px,1.8vw,12px);letter-spacing:.45em;
     text-transform:uppercase;color:var(--soft);opacity:.75;margin-bottom:.7em}
-  #cap h1{margin:0 auto;max-width:24ch;font-size:clamp(18px,3.3vw,32px);font-weight:700;font-style:italic;
-    line-height:1.4;text-shadow:0 2px 26px rgba(0,0,0,.85),0 0 22px rgba(80,180,255,.22)}
+  #cap h1{font-family:"Pixelify Sans",ui-monospace,monospace;margin:0 auto;max-width:26ch;
+    font-size:clamp(18px,3.2vw,32px);font-weight:500;line-height:1.5;letter-spacing:.02em;
+    text-shadow:0 2px 26px rgba(0,0,0,.9),0 0 18px rgba(90,255,200,.2)}
 
   #loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--soft);
     font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.3em;text-transform:uppercase}
@@ -43,13 +46,9 @@
 <body>
   <canvas id="sky"></canvas>
 
-  <div id="holo">
-    <div class="hl">МЫ ВМЕСТЕ УЖЕ</div>
-    <div id="tmr">—</div>
-    <div class="hd">с 06·06·2026</div>
-  </div>
+  <div id="holo"><div id="tmr">—</div></div>
 
-  <div id="cap"><div class="tag">✦ define dancing ✦</div><h1 id="capH"></h1></div>
+  <div id="cap"><h1 id="capH"></h1></div>
   <div id="loader">boot · EVE · WALL·E</div>
 
 <script>
@@ -87,8 +86,8 @@ function heartPath(s){ctx.beginPath();ctx.moveTo(0,s*0.32);ctx.bezierCurveTo(s*0
 var ws=[];
 function newWarp(spread){ var an=rnd(0,6.2832), rr=Math.sqrt(rnd(0.0001,1)); return {x:Math.cos(an)*rr, y:Math.sin(an)*rr, z:spread?rnd(0.06,1):1}; }
 function makeWarp(){ ws=[]; var n=clamp(Math.round((W*H)/(5200*dpr)),220,760); for(var i=0;i<n;i++) ws.push(newWarp(true)); }
-function drawWarp(dt,now){
-  var cx=W/2, cy=H*0.5, sc=Math.min(W,H)*0.62, sp=(RM?0.00006:0.00026)*dt;
+function drawWarp(dt,now,cx,cy){
+  var sc=Math.min(W,H)*0.62, sp=(RM?0.00006:0.00026)*dt;
   var roll=now*0.00004, cr=Math.cos(roll), sr=Math.sin(roll);
   for(var i=0;i<ws.length;i++){ var s=ws[i], pz=s.z; s.z-=sp;
     if(s.z<=0.02){ ws[i]=newWarp(false); continue; }
@@ -104,11 +103,11 @@ function drawWarp(dt,now){
 /* ---------- частицы ---------- */
 var hearts=[], puffs=[];
 function addHeart(x,y,vy,sz){ hearts.push({x:x,y:y,vx:rnd(-0.25,0.25),vy:vy,s:sz,a:1,rot:rnd(-0.3,0.3),vr:rnd(-0.02,0.02)}); }
-function addPuff(x,y,vx,vy){ puffs.push({x:x,y:y,vx:vx,vy:vy,s:rnd(5,12)*dpr,a:0.5}); }
+function addPuff(x,y,vx,vy){ puffs.push({x:x,y:y,vx:vx,vy:vy,s:rnd(9,20)*dpr,a:0.62}); }
 function drawParticles(dt){
-  for(var i=puffs.length-1;i>=0;i--){ var p=puffs[i]; p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.s+=0.35*dt/16;p.a-=0.013*dt/16;
+  for(var i=puffs.length-1;i>=0;i--){ var p=puffs[i]; p.x+=p.vx*dt/16;p.y+=p.vy*dt/16;p.s+=0.5*dt/16;p.a-=0.008*dt/16;
     if(p.a<=0){puffs.splice(i,1);continue;}
-    ctx.globalAlpha=p.a*0.55; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,6.28); ctx.fillStyle="#dfe9f5"; ctx.fill(); }
+    ctx.globalAlpha=p.a*0.6; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,6.28); ctx.fillStyle="#e6eef8"; ctx.fill(); }
   for(var i=hearts.length-1;i>=0;i--){ var h=hearts[i]; h.x+=h.vx*dt/16;h.y+=h.vy*dt/16;h.vy-=0.003*dt/16;h.rot+=h.vr*dt/16;h.a-=0.006*dt/16;
     if(h.a<=0){hearts.splice(i,1);continue;}
     ctx.save(); ctx.globalAlpha=clamp(h.a,0,1); ctx.translate(h.x,h.y); ctx.rotate(h.rot);
@@ -161,46 +160,44 @@ function drawWalle(x,y,s,tilt){
 
 /* ---------- сцена ---------- */
 var raf=null, startT=null, lastNow=0, captionShown=false;
-var wx=0,wy=0,wvx=0,wvy=0, inited=false, evTrail=[];
+var pwx=0,pwy=0, winit=false;
+// направление полёта хаотично меняется; и ФОН, и ДНК-спираль слушают его
+function flowAng(t){ return 1.35*Math.sin(t*0.00016) + 0.9*Math.sin(t*0.00029+1.1) + 0.55*Math.sin(t*0.000071+2.3); }
 function frame(now){
   if(startT==null){ startT=now; lastNow=now; }
   var t=now-startT, dt=clamp(now-lastNow,0,50), st=dt/16; lastNow=now;
-  // фон
   var g=ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,"#070b1a"); g.addColorStop(0.55,"#0a1024"); g.addColorStop(1,"#120a22");
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  drawWarp(dt,now);
 
-  // EVE — хаотичный лиссажу
-  var Cx=W/2, Cy=H*0.52, Ax=Math.min(W,H)*0.17, Ay=Math.min(W,H)*0.13;
-  var ex=Cx + Math.sin(t*0.0011)*Ax + Math.sin(t*0.0017+1.3)*Ax*0.5;
-  var ey=Cy + Math.sin(t*0.0013+0.7)*Ay + Math.cos(t*0.0023)*Ay*0.55;
-  // WALL·E догоняет EVE по её СЛЕДУ с задержкой -> кружат вместе, не слипаясь
-  evTrail.push(ex,ey); if(evTrail.length>90){ evTrail.splice(0,2); }
-  var tgx=evTrail[0], tgy=evTrail[1];
-  if(!inited){ wx=tgx-60; wy=tgy+40; inited=true; }
-  wvx += (tgx-wx)*0.022*st; wvy += (tgy-wy)*0.022*st;
-  wvx *= Math.pow(0.90, st); wvy *= Math.pow(0.90, st);
-  wx += wvx*st; wy += wvy*st;
+  // хаотичное направление полёта
+  var fa=flowAng(t), fdx=Math.cos(fa), fdy=Math.sin(fa);
+  // фон-варп: точка схода смещается по направлению -> «несёмся» в разные стороны
+  drawWarp(dt, now, W/2 + fdx*W*0.26, H*0.5 + fdy*H*0.26);
 
-  var s=Math.min(W,H)*0.07;
-  var eveTilt=Math.sin(t*0.002)*0.22;
-  var walTilt=Math.sin(t*0.0017)*0.5 + t*0.0004;   // кувыркается
+  // ДНК-двойная спираль: ось = направление полёта, нити колеблются по перпендикуляру
+  var Cx=W/2 + Math.sin(now*0.00009)*W*0.05, Cy=H*0.52 + Math.cos(now*0.00011)*H*0.05;
+  var px=-fdy, py=fdx;
+  var R=Math.min(W,H)*0.17, s=Math.min(W,H)*0.07, phase=t*0.0026;
+  var cE=Math.cos(phase), dE=Math.sin(phase), cW=-cE, dW=-dE;
+  var ex=Cx+px*R*cE, ey=Cy+py*R*cE, sE=s*(1+0.34*dE);
+  var wx=Cx+px*R*cW, wy=Cy+py*R*cW, sW=s*(1+0.34*dW);
+  var eveTilt=Math.sin(phase)*0.22, walTilt=t*0.0006 + Math.sin(phase)*0.4;
 
-  // пшик огнетушителя — против скорости WALL·E
-  var vlen=Math.hypot(wvx,wvy)||1;
-  if(!RM && Math.random()<0.5){ addPuff(wx+ (wvx/vlen)*s*0.7 + s*0.6, wy+(wvy/vlen)*s*0.6, -(wvx/vlen)*1.6*dpr+rnd(-0.4,0.4), -(wvy/vlen)*1.6*dpr+rnd(-0.4,0.4)); }
-  // след из сердечек между партнёрами
+  // СИЛЬНЫЙ след «противогаза/огнетушителя» за WALL·E (против его скорости)
+  if(!winit){ pwx=wx; pwy=wy; winit=true; }
+  var vx=wx-pwx, vy=wy-pwy, vl=Math.hypot(vx,vy)||1; pwx=wx; pwy=wy;
+  if(!RM){ for(var q=0;q<3;q++){ addPuff(wx-(vx/vl)*s*0.7+rnd(-6,6), wy-(vy/vl)*s*0.7+rnd(-6,6), -(vx/vl)*2.2*dpr+rnd(-0.5,0.5), -(vy/vl)*2.2*dpr+rnd(-0.5,0.5)); } }
   if(!RM && Math.random()<0.16){ addHeart((ex+wx)/2+rnd(-12,12),(ey+wy)/2,-rnd(0.3,0.8)*dpr,rnd(8,15)*dpr); }
   drawParticles(dt);
 
-  // искра рук при сближении
   var dist=Math.hypot(ex-wx,ey-wy);
-  if(dist < s*2.4){ ctx.globalAlpha=clamp(1-dist/(s*2.6),0,1)*0.6; ctx.strokeStyle="#bff0ff"; ctx.lineWidth=2*dpr;
+  if(dist < s*2.2){ ctx.globalAlpha=clamp(1-dist/(s*2.4),0,1)*0.6; ctx.strokeStyle="#bff0ff"; ctx.lineWidth=2*dpr;
     ctx.shadowColor="#7fe3ff"; ctx.shadowBlur=10*dpr; ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(wx,wy); ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=1; }
 
-  if(ey>=wy){ drawWalle(wx,wy,s,walTilt); drawEve(ex,ey,s,eveTilt); }
-  else { drawEve(ex,ey,s,eveTilt); drawWalle(wx,wy,s,walTilt); }
+  // порядок по глубине нитей ДНК (кто впереди — крупнее и поверх)
+  if(dE>=dW){ drawWalle(wx,wy,sW,walTilt); drawEve(ex,ey,sE,eveTilt); }
+  else { drawEve(ex,ey,sE,eveTilt); drawWalle(wx,wy,sW,walTilt); }
 
   if(t>2200 && !captionShown){ captionShown=true; capWrap.classList.add("show"); holo.classList.add("show"); }
   raf=requestAnimationFrame(frame);
@@ -211,7 +208,7 @@ var f=CONFIG.TIMER_FROM, T0=new Date(f[0],f[1]-1,f[2],f[3],f[4],f[5]).getTime();
 function pad(n){ return n<10?"0"+n:""+n; }
 function tick(){ var d=Date.now()-T0; if(d<0)d=0; var sec=Math.floor(d/1000);
   var s=sec%60, m=Math.floor(sec/60)%60, h=Math.floor(sec/3600)%24, days=Math.floor(sec/86400);
-  tmr.textContent = days+"д  "+pad(h)+":"+pad(m)+":"+pad(s); }
+  tmr.textContent = pad(days)+":"+pad(h)+":"+pad(m)+":"+pad(s); }
 setInterval(tick,1000); tick();
 
 function sizeCanvas(){ var cssW=window.innerWidth,cssH=window.innerHeight;
